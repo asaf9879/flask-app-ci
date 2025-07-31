@@ -1,0 +1,52 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Python Dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run Tests
+      run: |
+        pytest tests/
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and Push Docker Image
+      run: |
+        IMAGE=${{ secrets.DOCKER_USERNAME }}/flask-app:latest
+        docker build -t $IMAGE .
+        docker push $IMAGE
+
+    - name: Update CD Repository
+      run: |
+        git config --global user.name "CI Bot"
+        git config --global user.email "ci@bot.com"
+        git clone https://x-access-token:${{ secrets.CD_REPO_TOKEN }}@github.com/asaf9879/eks-gitops-cd.git
+        cd eks-gitops-cd/app
+        echo "Updated at $(date)" > timestamp.txt
+        git add timestamp.txt
+        git commit -m "CI update: $(date)"
+        git push

@@ -4,6 +4,9 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 jobs:
   build-test-deploy:
     runs-on: ubuntu-latest
@@ -40,13 +43,16 @@ jobs:
         docker build -t $IMAGE .
         docker push $IMAGE
 
-    - name: Update CD Repository
+    - name: Update CD repository
       run: |
         git config --global user.name "CI Bot"
         git config --global user.email "ci@bot.com"
-        git clone https://x-access-token:${{ secrets.CD_REPO_TOKEN }}@github.com/asaf9879/eks-gitops-cd.git
+
+        git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/asaf9879/eks-gitops-cd.git
         cd eks-gitops-cd/app
+
         echo "Updated at $(date)" > timestamp.txt
+
         git add timestamp.txt
         git commit -m "CI update: $(date)"
-        git push
+        git push origin main

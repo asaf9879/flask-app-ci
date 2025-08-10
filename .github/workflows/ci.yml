@@ -44,12 +44,13 @@ jobs:
         docker push $IMAGE
 
     - name: Update CD repository
+      env:
+        CD_PAT: ${{ secrets.CD_PAT }}
       run: |
         git config --global user.name "CI Bot"
         git config --global user.email "ci@bot.com"
 
-        git clone https://x-access-token:${{ secrets.CD_PUSH_TOKEN }}@github.com/asaf9879/eks-gitops-cd.git
-
+        git clone https://x-access-token:${CD_PAT}@github.com/asaf9879/eks-gitops-cd.git
         cd eks-gitops-cd/app
 
         echo "Updated at $(date)" > timestamp.txt
